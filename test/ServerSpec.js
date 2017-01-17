@@ -14,7 +14,7 @@ var Link = require('../app/models/link');
 // Remove the 'x' from beforeEach block when working on
 // authentication tests.
 /************************************************************/
-var beforeEach = function() {};
+var xbeforeEach = function() {};
 /************************************************************/
 
 
@@ -99,7 +99,7 @@ describe('', function() {
     });
 
     it('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
-
+       console.log("------------");
       var options = {
         'method': 'POST',
         'uri': 'http://127.0.0.1:4568/links',

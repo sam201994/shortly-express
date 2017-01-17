@@ -27,8 +27,33 @@ app.use(express.static(__dirname + '/public'));
 // function(req, res) {
 //   res.render('index');
 // });
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
+
+app.post('/signup', function(req, res) {
+
+  
+  var user = new User({
+    username: req.body.username,
+    password: req.body.password
+  });
+  user.save().then(function() {
+    res.redirect('/');
+  });
+});
 
 app.get('/', util.LoggedIn, function(req, res) {
+  console.log("we are in islooged in");
+    res.render('index');
+  });
+
+app.get('/create', util.LoggedIn, function(req, res) {
+  console.log("we are in islooged in");
+    res.render('index');
+  });
+
+app.get('/links', util.LoggedIn, function(req, res) {
   console.log("we are in islooged in");
     res.render('index');
   });
