@@ -23,25 +23,39 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
-function(req, res) {
-  res.render('index');
+// app.get('/', 
+// function(req, res) {
+//   res.render('index');
+// });
+
+app.get('/', util.LoggedIn, function(req, res) {
+  console.log("we are in islooged in");
+    res.render('index');
+  });
+
+  app.get('/login', 
+ function(req, res) {
+  console.log("we are in login");
+   res.render('login');
 });
 
 app.get('/create', 
 function(req, res) {
+    console.log("we are in create");
   res.render('index');
 });
 
 app.get('/links', 
 function(req, res) {
   Links.reset().fetch().then(function(links) {
+      console.log("we are in links1");
     res.status(200).send(links.models);
   });
 });
 
 app.post('/links', 
 function(req, res) {
+    console.log("request body", req.body);
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
@@ -77,12 +91,17 @@ function(req, res) {
 /************************************************************/
 
 
-
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
+
+app.get('/links', util.LoggedIn, function(req, res) {
+  console.log("we are in islooged in");
+   util.LoggedIn(req,res);
+  });
+
 
 app.get('/*', function(req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
@@ -102,5 +121,6 @@ app.get('/*', function(req, res) {
     }
   });
 });
+
 
 module.exports = app;
