@@ -193,8 +193,7 @@ describe('', function() {
 
         requestWithSession(options, function(error, res, body) {
           var code = res.body.code;
-          console.log("code: ",code);
-          console.log("link code: ",link);
+        
           
           expect(code).to.equal(link.get('code'));
           done();

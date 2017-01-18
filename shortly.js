@@ -2,7 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+var bcrypt = require('bcrypt-nodejs');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -10,7 +10,7 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
-
+var session = require('express-session');
 var app = express();
 
 app.set('views', __dirname + '/views');
@@ -21,27 +21,13 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({
+  secret: 'ola',
+  resave: false,
+  saveUninitialized: true
+}));
 
 
-// app.get('/', 
-// function(req, res) {
-//   res.render('index');
-// });
-app.get('/signup', function(req, res) {
-  res.render('signup');
-});
-
-app.post('/signup', function(req, res) {
-
-  
-  var user = new User({
-    username: req.body.username,
-    password: req.body.password
-  });
-  user.save().then(function() {
-    res.redirect('/');
-  });
-});
 
 app.get('/', util.LoggedIn, function(req, res) {
   console.log("we are in islooged in");
@@ -54,28 +40,14 @@ app.get('/create', util.LoggedIn, function(req, res) {
   });
 
 app.get('/links', util.LoggedIn, function(req, res) {
-  console.log("we are in islooged in");
-    res.render('index');
-  });
-
-  app.get('/login', 
- function(req, res) {
-  console.log("we are in login");
-   res.render('login');
-});
-
-app.get('/create', 
-function(req, res) {
-    console.log("we are in create");
-  res.render('index');
-});
-
-app.get('/links', 
-function(req, res) {
+  // console.log("lisnks",Links);
+  // console.log("lisnks reset",Links.reset());
+  //  console.log("lisnks fetch",Links.reset().fetch());
   Links.reset().fetch().then(function(links) {
-      console.log("we are in links1");
+    //console.log("------------------------------------------------------",links);
     res.status(200).send(links.models);
   });
+
 });
 
 app.post('/links', 
@@ -84,7 +56,7 @@ function(req, res) {
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
-    console.log('Not a valid url: ', uri);
+    //console.log('Not a valid url: ', uri);
     return res.sendStatus(404);
   }
 
@@ -111,6 +83,15 @@ function(req, res) {
   });
 });
 
+  app.get('/login', 
+ function(req, res) {
+  console.log("we are in login");
+   res.render('login');
+});
+
+
+
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
@@ -122,14 +103,68 @@ function(req, res) {
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
 
-app.get('/links', util.LoggedIn, function(req, res) {
-  console.log("we are in islooged in");
-   util.LoggedIn(req,res);
-  });
 
+
+
+app.post('/login', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+  //var newUser = new User({ username: username });
+  var newUser = new User({ username: username });
+  //console.log("-------------------",newUser.fetch());
+  newUser
+    .fetch()
+    .then(function(user) {
+      if (!user) {
+        res.redirect('/login');
+      } else {
+        bcrypt.compare(password, user.get('password'), function(err, match) {
+          if (match) {
+            util.createSession(req, res, user);
+          } else {
+            res.redirect('/login');
+          }
+        });
+      }
+    });
+});
+
+
+
+
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});  
+
+app.post('/signup', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+  var newUser = new User({ username: username });
+
+
+  newUser
+    .fetch()
+    .then(function(user) {
+      if (!user) {
+        var newUser = new User({
+          username: username,
+          password: password
+        });
+        newUser.save()
+          .then(function(newUser) {
+            util.createSession(req, res, newUser);
+          });
+      } else {
+        //console.log('Account already exists');
+        res.redirect('/signup');
+      }
+    });
+});
 
 app.get('/*', function(req, res) {
-  new Link({ code: req.params[0] }).fetch().then(function(link) {
+
+  var link = new Link({code: req.params[0]});
+  link.fetch().then(function(link) {
     if (!link) {
       res.redirect('/');
     } else {
@@ -146,6 +181,6 @@ app.get('/*', function(req, res) {
     }
   });
 });
-
-
 module.exports = app;
+
+
